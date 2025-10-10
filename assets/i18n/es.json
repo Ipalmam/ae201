@@ -1,0 +1,38 @@
+{
+    "settings menu": {
+        "button1": "Configuracion de perfil",
+        "button2": "Configuracion de lenguaje",
+        "button3": "Configuracion de audio",
+        "button4": "Configuracion de controles"
+    },
+    "detected language": {
+        "title": "Idioma detectado",
+        "message":"Tu lenguaje se detecto como Español, deseas continuar en este idioma? Tambien puedes cambiarlo despues en la pantalla de configuracion"
+    },
+    "music": {
+        "title": "Musica",
+        "message":"La musica esta activada, deseas continuar con la musica activada? Tambien puedes cambiarlo despues en la pantalla de configuracion"
+    },
+    "detected user": {
+        "title": "Sesion iniciada como:",
+        "message":"Tu uauario ha sido detectado como: {username}, deseas continuar con este usuario? Tambien puedes cambiarlo despues en la pantalla de configuracion"
+    },
+    "menu": {
+    "home": "Inicio",
+    "versus": "Versus",
+    "soloOps": "Individual",
+    "squad": "Equipo",
+    "settings": "Configuracion"
+  },
+  "buttons": {
+    "start": "Start Mission",
+    "exit": "Exit",
+    "confirm": "Confirmar"
+  },
+  "messages": {
+    "welcome": "Welcome, pilot!",
+    "loading": "Loading cockpit systems...",
+    "error": "Something went wrong"
+  }
+  
+}

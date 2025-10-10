@@ -1,0 +1,23 @@
+{
+  "detected language": {
+        "title": "Detected language",
+        "message":"Your language was detected as English, do you want to continue in this language? You can also change it later in the settings screen"
+    },
+  "menu": {
+    "home": "Home",
+    "versus": "Versus",
+    "soloOps": "Solo Ops",
+    "squad": "Squad",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "start": "Start Mission",
+    "exit": "Exit",
+    "confirm": "Confirm"
+  },
+  "messages": {
+    "welcome": "Welcome, pilot!",
+    "loading": "Loading cockpit systems...",
+    "error": "Something went wrong"
+  }
+}

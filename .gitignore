@@ -1,0 +1,9 @@
+﻿android/app/build/
+build/
+.dart_tool/
+.gradle/
+android/.gradle/
+**/zip-cache/
+*.apk
+*.so
+*.jar
