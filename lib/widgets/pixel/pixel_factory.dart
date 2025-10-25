@@ -1,26 +1,38 @@
+// lib/widgets/pixel/pixel_factory.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Añadido para futuras integraciones de Provider/StyleManager
 import '../shared/visual_factory.dart';
-import '../../theme/pixel_pallete.dart';
+import '../../theme/game_palettes.dart'; // Contiene la definición de UiPalette
 import '../../widgets/pixel/pixel_button.dart';
 import '../../widgets/pixel/pixel_container.dart';
 
+
 class PixelFactory implements VisualFactory {
-  final UiPalette palette;
+  // 🔑 CAMBIO 1: Eliminamos la propiedad 'palette'. La Factory es ahora sin estado (stateless).
+  // final UiPalette palette; // <-- ELIMINADO
+
   final double liftAmount;
   final Duration animDuration;
   final Curve animCurve;
-  final double _navHeight; // backing field for navHeight getter
+  final double _navHeight;
 
+  // 🔑 CAMBIO 2: Eliminamos 'required this.palette' del constructor.
   PixelFactory({
-    required this.palette,
     this.liftAmount = 8,
     this.animDuration = const Duration(milliseconds: 220),
     this.animCurve = Curves.easeOut,
-    double navHeight = 64, // default pixel nav height (can be overridden)
+    double navHeight = 64,
   }) : _navHeight = navHeight;
 
   @override
   double get navHeight => _navHeight;
+
+  // ----------------------------------------------------------------------
+  // IMPLEMENTACIÓN DE WIDGETS
+  // ----------------------------------------------------------------------
+  // NOTA: Los métodos build NavButton, IconContainer y NavBarShell utilizan
+  // el ThemeData del contexto, que es inyectado por StyleManager.
 
   @override
   Widget buildNavButton({
@@ -29,9 +41,13 @@ class PixelFactory implements VisualFactory {
     required bool active,
     required VoidCallback onTap,
   }) {
-    final double effectiveLift = active ? -liftAmount : 0.0;
+    // Obtenemos la paleta del tema actual (inyectado por StyleManager)
+    final palette = Theme.of(context).colorScheme; // Usando ColorScheme para adaptarnos al Theme
     final Color bgColor = active ? palette.primary : Colors.transparent;
-    final borderLeft = BorderSide(color: palette.highlight.withAlpha(200), width: 1);
+    final double effectiveLift = active ? -liftAmount : 0.0;
+    
+    // Usamos el accent para el borde, asumiendo que es el color 'highlight' del tema
+    final borderLeft = BorderSide(color: palette.secondary.withAlpha(200), width: 1); 
 
     return Expanded(
       child: InkWell(
@@ -81,80 +97,35 @@ class PixelFactory implements VisualFactory {
     required BuildContext context,
     required Widget child,
   }) {
+    // Usamos el tema inyectado por StyleManager
+    final palette = Theme.of(context).colorScheme;
     return Container(
-      height: navHeight, // match button/nav height via getter
-      color: palette.neutral,
+      height: navHeight,
+      color: palette.surface, // neutral color
       child: Container(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: palette.highlight, width: 2))),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: palette.secondary, width: 2))), // highlight color
         child: child,
       ),
     );
   }
+  
+  // ----------------------------------------------------------------------
+  // IMPLEMENTACIÓN DE PROPIEDADES DE ESTILO Y SETTINGS
+  // ----------------------------------------------------------------------
 
+  /// 🔑 CAMBIO 3: Actualizamos la firma para recibir la paleta.
   @override
-  Color iconColor(bool active) => active ? palette.highlight : palette.text;
+  Color iconColor(UiPalette palette, bool active) => active ? palette.highlight : palette.text;
 
-  // Note: buildAppBar is not part of VisualFactory interface, do not annotate with @override
-  PreferredSizeWidget buildAppBar({
-    required BuildContext context,
-    required String title,
-    List<Widget>? actions,
-    PreferredSizeWidget? bottom,
-  }) {
-    // Match Aesthetic: larger toolbar and ornament
-    const double toolbarHeight = 72; // adjusted height
-    const double topOrnamentHeight = 16; // slightly larger decorative band
-    final double bottomHeight = bottom?.preferredSize.height ?? 0;
-    final double totalHeight = toolbarHeight + topOrnamentHeight + bottomHeight;
-
-    return PreferredSize(
-      preferredSize: Size.fromHeight(totalHeight),
-      child: Material(
-        color: palette.primary,
-        elevation: 2,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // decorative stripe
-            Container(height: topOrnamentHeight, color: palette.highlight.withAlpha(220)),
-            // main toolbar with internal vertical padding for balanced look
-            SizedBox(
-              height: toolbarHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(width: 8),
-                    // optional leading area (keeps space consistent with aesthetic)
-                    Expanded(
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: 'PressStart2P', // keep pixel font if used
-                          fontSize: 16, // slightly larger to match Aesthetic visual weight
-                          letterSpacing: 0.5,
-                          height: 1.0,
-                        ),
-                      ),
-                    ),
-                    if (actions != null) ...actions,
-                    const SizedBox(width: 8),
-                  ],
-                ),
-              ),
-            ),
-            if (bottom != null) bottom,
-          ],
-        ),
-      ),
-    );
-  }
-
+  /// 🔑 CAMBIO 4: Actualizamos la firma para recibir BuildContext.
   @override
-  Widget buildSettingsButton() => PixelButton(label: "Settings", onPressed: () {});
+  Widget buildSettingsButton({required BuildContext context}) =>
+      PixelButton(label: "Settings", onPressed: () {
+        // Lógica de audio/navegación a través de Provider/Context
+        // Ejemplo: context.read<UiSoundService>().playButton();
+      });
 
+  /// 🔑 CAMBIO 5: Actualizamos la firma para recibir BuildContext.
   @override
-  Widget buildSettingsContainer({required Widget child}) => PixelContainer(child: child);
+  Widget buildSettingsContainer({required BuildContext context, required Widget child}) => PixelContainer(child: child);
 }

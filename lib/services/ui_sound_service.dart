@@ -1,26 +1,25 @@
 // lib/services/ui_sound_service.dart
 
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // Necesario para ChangeNotifier
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-enum UiStyle { pixel, aesthetic }
+// 🔑 CLAVE: El enum UiStyle. Debe estar aquí para que StyleManager lo importe.
+enum UiStyle { pixel, aesthetic } 
 
-class UiSoundService {
-  UiSoundService._internal();
-
-  static final UiSoundService instance = UiSoundService._internal();
-
+/// Servicio que gestiona la reproducción de SFX (Sound Pool) y el volumen.
+/// Extiende ChangeNotifier y NO es un Singleton.
+class UiSoundService extends ChangeNotifier {
   // Config
   UiStyle _style = UiStyle.pixel;
   double _volume = 1.0;
   bool _muted = false;
-  bool _initialized = false;
-
-  // Pool size tuned for short UI blips; adjust if you need more overlap
+  
   final int _poolSize = 3;
   final List<AudioPlayer> _players = [];
   int _roundRobinIndex = 0;
+
   // Map logical sound keys to asset paths
   final Map<UiStyle, Map<String, String>> _soundMap = {
     UiStyle.pixel: {
@@ -32,119 +31,91 @@ class UiSoundService {
       'container': 'audio/sounds/ui/aestheticContainerSound.wav',
     },
   };
-  Future<void> init({double volume = 1.0}) async {
-    if (_initialized) return;
-    _volume = volume;
-    // create and configure pool players
-    for (var i = 0; i < _poolSize; i++) {
-      final p = AudioPlayer();
-      try {
-        await p.setVolume(_volume);
-      } catch (e) {
-        debugPrint('UiSoundService: player.setVolume failed: $e');
-      }
-      _players.add(p);
-    }
-    _initialized = true;
-    debugPrint('UiSoundService initialized with pool=$_poolSize volume=$_volume');
+
+  // 🔑 CONSTRUCTOR: Inicializa el pool aquí.
+  UiSoundService() {
+    _initPlayerPool();
   }
-//change sounds based on style
+
+  // ----------------------------------------------------------------------
+  // GETTERS y SETTERS
+  // ----------------------------------------------------------------------
+  double get volume => _volume;
+  bool get isMuted => _muted;
+
   void setStyle(UiStyle style) {
+    if (_style == style) return;
     _style = style;
-    debugPrint('UiSoundService style set to $_style');
+    // No necesita notifyListeners, solo cambia la referencia para asset loading.
   }
-  UiStyle get style => _style;
-  void setVolume(double v) {
-    _volume = v.clamp(0.0, 1.0);
-    for (final p in _players) {
-      p.setVolume(_volume);
+  
+  // ----------------------------------------------------------------------
+  // LÓGICA DE CARGA/INICIALIZACIÓN
+  // ----------------------------------------------------------------------
+
+  Future<void> _initPlayerPool() async {
+    for (int i = 0; i < _poolSize; i++) {
+      final player = AudioPlayer();
+      // El volumen se ajusta en loadVolume()
+      _players.add(player);
     }
-    debugPrint('UiSoundService volume set to $_volume');
   }
-  void mute() {
-    _muted = true;
+
+  /// 🔑 loadVolume reemplaza AudioManager.loadVolume()
+  Future<void> loadVolume(SharedPreferences prefs) async {
+    _volume = prefs.getDouble('sfx_volume') ?? 1.0;
+    _muted = prefs.getBool('sfx_muted') ?? false;
+
+    // Aplica volumen a los reproductores
+    final effectiveVolume = _muted ? 0.0 : _volume;
     for (final p in _players) {
-      p.setVolume(0.0);
+      await p.setVolume(effectiveVolume);
     }
-    debugPrint('UiSoundService muted');
+    notifyListeners();
   }
-  void unmute() {
-    _muted = false;
-    for (final p in _players) {
-      p.setVolume(_volume);
-    }
-    debugPrint('UiSoundService unmuted');
-  }
-  // Fire-and-forget low-latency play using pool. Does not await.
+
+  // ----------------------------------------------------------------------
+  // LÓGICA DE REPRODUCCIÓN (playButtonAndAwaitStart está aquí)
+  // ----------------------------------------------------------------------
+
   void play(String key) {
-    if (!_initialized) {
-      debugPrint('UiSoundService.play called before init');
-      return;
-    }
     if (_muted) return;
     final asset = _soundMap[_style]?[key];
-    if (asset == null) {
-      debugPrint('UiSoundService: no asset for key=$key style=$_style');
-      return;
-    }
+    if (asset == null) return;
+
     final player = _nextPlayer();
     try {
-      // start playback without awaiting completion
       player.play(AssetSource(asset));
-    } catch (e) {
-      debugPrint('UiSoundService.play failed: $e');
-    }
+    } catch (_) {}
   }
-  // Await that the player started playing the asset. Useful when you need
-  // to ensure playback started before navigation.
+
   Future<void> playAndAwaitStart(String key) async {
-    if (!_initialized) {
-      debugPrint('UiSoundService.playAndAwaitStart called before init');
-      return;
-    }
     if (_muted) return;
     final asset = _soundMap[_style]?[key];
-    if (asset == null) {
-      debugPrint('UiSoundService: no asset for key=$key style=$_style');
-      return;
-    }
+    if (asset == null) return;
+    
     final player = _nextPlayer();
     try {
       await player.play(AssetSource(asset));
-    } catch (e) {
-      debugPrint('UiSoundService.playAndAwaitStart failed: $e');
-    }
+    } catch (_) {}
   }
 
-  // Convenience helpers
+  // Ayudantes de conveniencia (lo que los botones necesitan)
   void playButton() => play('button');
-  Future<void> playButtonAndAwaitStart() => playAndAwaitStart('button');
-
-  void playContainer() => play('container');
-  Future<void> playContainerAndAwaitStart() => playAndAwaitStart('container');
+  Future<void> playButtonAndAwaitStart() => playAndAwaitStart('button'); 
 
   AudioPlayer _nextPlayer() {
-    if (_players.isEmpty) {
-      // fallback: create ephemeral player if init was skipped
-      final fallback = AudioPlayer();
-      fallback.setVolume(_volume);
-      return fallback;
-    }
+    if (_players.isEmpty) return AudioPlayer(); // Fallback
     final p = _players[_roundRobinIndex % _players.length];
     _roundRobinIndex = (_roundRobinIndex + 1) % _players.length;
     return p;
   }
 
-  Future<void> dispose() async {
+  @override
+  void dispose() {
     for (final p in _players) {
-      try {
-        await p.dispose();
-      } catch (e) {
-        debugPrint('UiSoundService.dispose error: $e');
-      }
+      p.dispose();
     }
-    _players.clear();
-    _initialized = false;
-    debugPrint('UiSoundService disposed');
+    super.dispose();
   }
 }

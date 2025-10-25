@@ -1,122 +1,38 @@
+// lib/screens/settings_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:ae201/screens/settings/profile_settings_screen.dart';
-import 'package:ae201/screens/settings/language_settings_screen.dart';
-import 'package:ae201/screens/settings/music_settings_screen.dart';
-import 'package:ae201/screens/settings/control_settings_screen.dart';
+import 'package:provider/provider.dart';
+// 🔑 Importaciones necesarias para la nueva arquitectura:
+import '../../services/localization_service.dart'; 
+import '../../services/style_manager.dart'; 
+// Opcional: si la clase necesita los enums/paletas
+import '../../theme/game_palettes.dart'; 
 
-class SettingsScreen extends StatefulWidget {
-  final Map<String, dynamic> localizedStrings;
 
-  const SettingsScreen({super.key, required this.localizedStrings});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _purpleStop;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat(reverse: true);
-
-    _purpleStop = Tween<double>(begin: 0.2, end: 0.8).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final labels = widget.localizedStrings['settings menu'] ?? {};
+    // Usar context.watch para acceder a los servicios.
+    // El widget se reconstruirá si el idioma cambia.
+    final loc = context.watch<LocalizationService>();
+    
+    // Puedes usar context.read o context.watch para StyleManager
+    // dependiendo de si necesitas que el Scaffold se reconstruya con el estilo.
+    // final styleManager = context.watch<StyleManager>(); 
+
+    final title = loc.t('menu.settings', fallback: 'Settings');
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(
-          widget.localizedStrings['menu']?['settings'] ?? 'Settings',
-          style: const TextStyle(color: Colors.purpleAccent),
-        ),
-        backgroundColor: Colors.black,
+        title: Text(title),
       ),
       body: Center(
-        child: SingleChildScrollView(
-          child: AnimatedBuilder(
-            animation: _purpleStop,
-            builder: (context, child) {
-              return Container(
-                padding: const EdgeInsets.all(24),
-                width: 400,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, _purpleStop.value, 1.0],
-                    colors: [Colors.black, Colors.purple, Colors.black],
-                  ),
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                ),
-                child: child,
-              );
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildNavButton(
-                  context,
-                  labels['button1'] ?? '🧑‍✈️ Profile Settings',
-                  ProfileSettingsScreen(localizedStrings: widget.localizedStrings),
-                ),
-                _buildNavButton(
-                  context,
-                  labels['button2'] ?? '🌐 Language & Session',
-                  LanguageSettingsScreen(localizedStrings: widget.localizedStrings),
-                ),
-                _buildNavButton(
-                  context,
-                  labels['button3'] ?? '🎵 Music Settings',
-                  MusicSettingsScreen(localizedStrings: widget.localizedStrings),
-                ),
-                _buildNavButton(
-                  context,
-                  labels['button4'] ?? '⚙️ Control Settings',
-                  ControlSettingsScreen(localizedStrings: widget.localizedStrings),
-                ),
-              ],
-            ),
-          ),
+        child: Text(
+          loc.t('messages.settings_placeholder', fallback: 'Aquí va el contenido de ajustes.'),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavButton(BuildContext context, String label, Widget screen) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.purpleAccent,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          elevation: 4,
-          side: const BorderSide(color: Colors.purpleAccent, width: 2),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(0)), // ✅ Squared corners
-          ),
-        ),
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
-        child: Text(label),
       ),
     );
   }

@@ -1,24 +1,30 @@
+// lib/screens/onboarding/login_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:ae201/screens/hangar/start_screen.dart';
-class LoginScreen extends StatelessWidget {
-  final String languageCode;
-  final Map<String, dynamic> localizedStrings;
+import 'package:provider/provider.dart';
+// Ya no necesitamos StartScreen aquí si volvemos al wrapper
+// import 'package:ae201/screens/hangar/start_screen.dart'; 
+import '../../services/localization_service.dart'; // Nueva Importación para el servicio
 
+class LoginScreen extends StatelessWidget {
   const LoginScreen({
     super.key,
-    required this.languageCode,
-    required this.localizedStrings,
   });
 
   @override
   Widget build(BuildContext context) {
-    final buttonText = localizedStrings['buttons']?['confirm'] ?? 'Sign in with Google';
-    final welcomeText = localizedStrings['messages']?['welcome'] ?? 'Welcome, pilot!';
+    // 1. OBTENER TRADUCCIONES VÍA PROVIDER
+    final loc = context.watch<LocalizationService>();
+    
+    // Los textos se obtienen directamente del servicio de localización
+    final buttonText = loc.t('buttons.googleSignIn', fallback: 'Sign in with Google'); 
+    final welcomeText = loc.t('messages.welcome', fallback: 'Welcome, pilot!');
+    final titleText = loc.t('menu.login', fallback: 'Log In');
 
     return Scaffold(
-      appBar: AppBar(title: Text(localizedStrings['menu']?['settings'] ?? 'Login')),
+      appBar: AppBar(title: Text(titleText)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -39,15 +45,11 @@ class LoginScreen extends StatelessWidget {
                   await FirebaseAuth.instance.signInWithCredential(credential);
 
                   if (context.mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StartScreen(
-                          languageCode: languageCode,
-                          localizedStrings: localizedStrings,
-                        ),
-                      ),
-                    );
+                    // 2. CORREGIR LA NAVEGACIÓN POST-AUTENTICACIÓN
+                    // Al completar el login, simplemente cerramos esta pantalla.
+                    // El AuthenticationWrapper se reconstruirá automáticamente 
+                    // (ya que user != null) y mostrará StartScreen.
+                    Navigator.of(context).pop(); 
                   }
                 }
               },

@@ -1,8 +1,10 @@
 // lib/widgets/pixel_button.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/services/ui_sound_service.dart';
 import '../../theme/pixel_pallete.dart';
+
 
 class PixelButton extends StatefulWidget {
   final String label;
@@ -82,7 +84,7 @@ class _PixelButtonState extends State<PixelButton> with SingleTickerProviderStat
   }
 
   Future<void> _handleTap() async {
-    await UiSoundService.instance.playButtonAndAwaitStart();
+    final soundService = context.read<UiSoundService>();
     await _doPressAnimation();
     widget.onPressed();
   }

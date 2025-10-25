@@ -37,6 +37,8 @@ dependencies:
   google_sign_in: ^6.2.1
   shared_preferences: ^2.2.2
   just_audio: ^0.9.36
+  provider: ^6.0.5
+  audioplayers: ^6.1.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -67,9 +69,9 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-  - assets/icons/person_raised_hand.png
-  - assets/icons/swords.png
-  - assets/icons/sword_rose.png
+  - assets/images/icons/person_raised_hand.png
+  - assets/images/icons/swords.png
+  - assets/images/icons/sword_rose.png
   - assets/i18n/en.json
   - assets/i18n/zh.json
   - assets/i18n/ja.json

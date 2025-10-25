@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Importación necesaria para Provider
 import '/services/ui_sound_service.dart';
-import '../../theme/aesthetic_pallete.dart';
+import '../../theme/aesthetic_pallete.dart'; // Mantener la importación por ahora
+
+
 class AestheticButton extends StatefulWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isSelected;
   final UiPalette? palette;
   final String? paletteName;
+  
   const AestheticButton({
     super.key,
     required this.label,
@@ -15,18 +19,25 @@ class AestheticButton extends StatefulWidget {
     this.palette,
     this.paletteName,
   });
+  
+  // NOTA: Esta lógica de paleta debe ser actualizada para usar StyleManager,
+  // pero la mantendremos por ahora para enfocarnos en el error de audio.
   UiPalette get _effectivePalette {
     if (palette != null) return palette!;
     if (paletteName != null) return getAestheticByName(paletteName!);
     return getAestheticByName('Dark Academia');
   }
+  
   @override
   State<AestheticButton> createState() => _AestheticButtonState();
 }
+
 class _AestheticButtonState extends State<AestheticButton>
     with SingleTickerProviderStateMixin {
+  
   late final AnimationController _gradientCtrl;
   late final Animation<double> _gradientAnim;
+  
   @override
   void initState() {
     super.initState();
@@ -39,23 +50,31 @@ class _AestheticButtonState extends State<AestheticButton>
       curve: Curves.easeInOut,
     );
   }
+  
   @override
   void dispose() {
     _gradientCtrl.dispose();
     super.dispose();
   }
+  
   Future<void> _handleTap() async {
-    await UiSoundService.instance.playButtonAndAwaitStart();
+    // 🔑 CORRECCIÓN DEL ERROR: Reemplaza .instance con context.read<T>()
+    // 'context.read' obtiene la instancia del servicio que fue inyectada en main.dart.
+    final soundService = context.read<UiSoundService>(); 
+    await soundService.playButtonAndAwaitStart();
+    
     await _gradientCtrl.forward(from: 0.0);
     await _gradientCtrl.reverse();
     widget.onPressed();
   }
+  
   @override
   Widget build(BuildContext context) {
+    // ... (El resto del método build se mantiene igual) ...
     final palette = widget._effectivePalette;
     final Color primary = widget.isSelected ? palette.accent : palette.primary;
-    //final Color highlight = palette.highlight;
     final Color accent = palette.accent;
+    
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
